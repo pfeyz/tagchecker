@@ -26,6 +26,11 @@ d = {
 #file keeping track of position
 tfile = "DO_NOT_DELETE.csv"
 
+#for backtracking purposes until I get my logic straight
+backTrack = -1
+firstTime = 1
+notFirst = 0
+
 #filename should be an xml file, errors should be a csv file
 def parseFile(filename, errors):
     name, ext = os.path.splitext(filename)
@@ -70,7 +75,7 @@ def parseFile(filename, errors):
                 exit()
     track.close()
 
-    finished = speaker(iter, filename, errorFile, startLine, True)
+    finished = speaker(iter, filename, errorFile, startLine, firstTime)
 
     #If there are no more lines left to check
     if finished == 1:
@@ -79,9 +84,23 @@ def parseFile(filename, errors):
         print "Congratulations: You have finished checking this file. WOOOO"
         exit()
 
+#For backtracking purposes. Pretty expensive, but any other way would require quite a bit of code revamping I think
+def parsebackwards(ID, errorFile, filename):
+    name, ext = os.path.splitext(filename)
+    #See if xml file found
+    try:
+        tree = parse(filename)
+    except:
+        print "ERROR: File not found. Check and make sure it exists"
+        exit()
+
+    iter = tree.getiterator(ns + "u")
+    speaker(iter, filename, errorFile, int(ID)-1, backTrack)
+	
 #Takes care of the speaker tier
-def speaker(iter, filename, errorFile, startLine, first):
-    raw_input("Welcome. Press q or quit to save and quit at any time. Press enter to continue\n--------------------------\n")
+def speaker(iter, filename, errorFile, startLine, first): 
+    if first == firstTime:
+        raw_input("Welcome. Press q to save+quit at any time. Press z to backtrack. Press enter to continue\n--------------------------\n")
     isCompound = True
     for elem in iter:
     	#Each sentence has a speaker, a unique ID, and a mor tier
@@ -90,8 +109,8 @@ def speaker(iter, filename, errorFile, startLine, first):
     	sentence = []
     	mor = []
 
-    	if int(ID)==int(startLine) or first == False:
-    		first = False	#Not the first line
+    	if int(ID)==int(startLine) or first == notFirst:
+    		first = notFirst    #Not the first line
 		#Checks to see if word. If so, print.
 		for child in elem:
 		    #is word
@@ -166,7 +185,13 @@ def speaker(iter, filename, errorFile, startLine, first):
 			punctuation = child.get("type")
 			sentence.append(d[punctuation])
 			mor.append(d[punctuation])
-
+			
+		    #is a central comma
+		    if (child.tag == (ns + "s")):
+		    	if child.get("type") == "comma":
+		            sentence.append(",")
+			    mor.append(",")
+		        
 		check(ID, speaker, sentence, mor, errorFile, filename)
 		elem.clear()
     return 1
@@ -243,6 +268,12 @@ def check(ID, speaker, sentence, mor, errorFile, filename):
     elif error == "n" or error == "N": print "No error found: Continuing to next phrase\n"
     elif error == "q" or error == "quit":
     	save(ID,filename)
+    elif error == "z" or error == "undo":
+    	print "\nReturning to previous line:\n***************************\n"
+    	if int(ID) < 1:
+            print "\nHEY! You're already at the first line of the file!!\n" 
+            check(ID, speaker, sentence, mor, errorFile, filename)
+        else: parsebackwards(ID, errorFile, filename)
     else:
     	print "\nCommand not recognized:"
         check(ID, speaker, sentence, mor, errorFile, filename)
@@ -256,6 +287,14 @@ def processError(ID, speaker, sentence, mor, i, errorFile, filename):
     utterance = ' '.join(sentence)
     completeMor = ' '.join(mor)
     while i < length:
+      if i < 0:
+          print "\nHEY! You're already at the first word in the sentence!!\n" 
+          print "\nReturning to previous line:\n***************************\n"
+    	  if int(ID) < 1:
+            print "\nHEY! You're already at the first line of the file!!\n" 
+            check(ID, speaker, sentence, mor, errorFile, filename)
+          else: parsebackwards(ID, errorFile, filename)
+      if sentence[i] != "," or mor[i] != ",":
     	print "Phrase: %s %s " % (speaker, utterance)
         print sentence[i].center(60," ")
         print mor[i].center(60," ")
@@ -276,12 +315,17 @@ def processError(ID, speaker, sentence, mor, i, errorFile, filename):
             errorFile.writerow([ID, speaker, utterance, completeMor, mor[i]+ " " + mor[i+1], correction, notes])
             i = i + 2
             print "\nCompound error recorded: Continuing to next word\n -------------\n"
-        elif error == "q" or error == "quit":
+        elif error == "z" or error == "Z":
+            print "\nReturning to previous word\n*************\n" 
+	    if sentence[i-1] == ",": i = i -2
+	    else: i = i - 1
+	elif error == "q" or error == "quit":
     	    save(ID,filename)
         else:
     	    print "\nCommand not recognized, try again:"
             processError(ID, speaker, sentence, mor, i, errorFile, filename)
             break
+      else: i += 1
 
 def save(ID, filename):
     print "\nLine saved as line %s. Exiting." % (ID)
