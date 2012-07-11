@@ -113,73 +113,84 @@ def speaker(iter, filename, errorFile, startLine, first):
     		first = notFirst    #Not the first line
 		#Checks to see if word. If so, print.
 		for child in elem:
-		    #is word
-		    if (child.tag == (ns + "w") and child.get("type") != "omission") and child.get("type") != "fragment" and child.get("untranscribed") != "unintelligible":
-			phrase = child.text
-			# is unknown
-			if phrase == "xxx" or phrase == "xx" :
+		    #is directly under <w>
+		    if (child.tag == (ns + "w")):
+		    	phrase = child.text 
+		        
+		        #is fragment
+		        if child.get("type") == "fragment":             
+		            mor.append("unk|" + phrase)
+		            sentence.append(phrase)
+		            continue
+		        #is shortening
+		        if (child.find("%sshortening" % (ns)) != None):
+		            if phrase == None:
+		                phrase = (child.find("%sshortening" % (ns))).text 
+		            else:
+		                phrase = phrase + (child.find("%sshortening" % (ns))).text 
+		            if child[0].tail != None:
+		                phrase = phrase + child[0].tail
+
+		        #is replacement
+		        if (child.find("%sreplacement" % (ns)) != None):
+			    phrase = (child.find("%sreplacement/%sw" % (ns,ns))).text
+			      
+	                #is compound
+	                if (child.find(".//%smwc/%spos/%sc" % (ns,ns,ns)) != None):
+			    if (child[0].tail != None):
+			        phrase = phrase + "+" + child[0].tail
+			    mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
+		        elif (phrase == "xxx" or phrase == "xx") :
 			    mor.append("unk|" + phrase)
-
-			else:
-		            #is shortening
-		            if (child.find("%sshortening" % (ns)) != None):
-		            	if phrase == None:
-		                    phrase = (child.find("%sshortening" % (ns))).text
-		                else:
-		                    phrase = phrase + (child.find("%sshortening" % (ns))).text
-		                if child[0].tail != None:
-		                    phrase = phrase + child[0].tail
-
-			    #is replacement
-			    if (child.find("%sreplacement" % (ns)) != None):
-			       phrase = (child.find("%sreplacement/%sw" % (ns,ns))).text
-
-			    #is compound
-			    if (child.find(".//%smwc/%spos/%sc" % (ns,ns,ns)) != None):
-				if (child[0].tail != None):
-				    phrase = phrase + "+" + child[0].tail
-				mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
-			    else:
-				mor.append(process_mor(child.getiterator(ns + "mor"), False))
-			    # needs @o, @m, etc at the end
-			    if child.get("formType") != None:
-				phrase = phrase + d[child.get("formType")]
-			sentence.append(phrase)
-
-	            #Weird tier <g> : not sure what it's for ... lots of repetition from above here
-	            #that could probably be cleaned up somehow
-	            elif (child.tag == (ns + "g")) and child[0].get("type") != "fragment" and child[0].get("type") != "omission":
-			if (child.find("%sw/%sreplacement/%sw" % (ns,ns,ns))) != None:
+		        else:
+		            mor.append(process_mor(child.getiterator(ns + "mor"), False))
+		        
+	                # needs @o, @m, etc at the end
+	                if child.get("formType") != None:
+		            phrase = phrase + d[child.get("formType")]
+		        sentence.append(phrase)
+		        
+		    #contained under <g>
+		    elif (child.tag == (ns + "g")):
+		        phrase = (child.find("%sw" % (ns))).text
+		        #is shortening
+		        if (child.find("%sw/%sshortening" % (ns,ns)) != None):
+			    if phrase == None:
+		                phrase = (child.find("%sw/%sshortening" % (ns,ns))).text 
+		            else:
+		                phrase = phrase + (child.find("%sw/%sshortening" % (ns,ns))).text 
+		            if child[0].tail != None:
+		                phrase = phrase + child[0].tail
+		        #is replacement
+		        if (child.find("%sw/%sreplacement/%sw" % (ns,ns,ns))) != None:
 		    	    phrase = (child.find("%sw/%sreplacement/%sw" % (ns,ns,ns))).text
-
+		    	    
 		    	    if (child.find("%sw/%sreplacement/%sw/%swk" % (ns,ns,ns,ns))) != None:
 		    	    	phrase = phrase + "+"  + (child.find("%sw/%sreplacement/%sw/%swk" % (ns,ns,ns,ns))).tail
 				mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
 				sentence.append(phrase)
 				continue
-		        #is shortening
-		        elif (child.find("%sw/%sshortening" % (ns,ns)) != None):
-		            phrase = child.find("%sw" % (ns)).text
-			    if phrase == None:
-		                phrase = (child.find("%sw/%sshortening" % (ns,ns))).text
-		            else:
-		                phrase = phrase + (child.find("%sw/%sshortening" % (ns,ns))).text
-		            if child[0].tail != None:
-		                phrase = phrase + child[0].tail
+			# needs @o, @m, etc at the end
+			if child[0].get("formType") != None:
+		            phrase = phrase + d[child.get("formType")]	
+		        #has no mor tier
+		        if (process_mor(child.getiterator(ns + "mor"), False) == None):
+		            if child.find("%sw/%sp" % (ns,ns)) != None:
+		                phrase = phrase + "h"
+		            mor.append("unk|" + phrase)
 		        else:
-		            phrase = (child.find("%sw" % (ns))).text
-
-		      # is unknown
-			if phrase == "xxx" or phrase == "xx" :
-			    mor.append("unk|" + phrase)
-		        else:
-		            value = process_mor(child.getiterator(ns + "mor"), False)
-		            if value != None:
-		    	        mor.append(value)
-		    	    else:
-		    	    	mor.append("NO_TAG|" + phrase)
-		    	sentence.append(phrase)
-
+		            mor.append(process_mor(child.getiterator(ns + "mor"), False))
+		        sentence.append(phrase)
+		    
+		    #paralinguisitic gesture
+		    elif(child.tag == (ns + "e")):
+		    	if (child.find("%sga" % (ns)) != None):
+		            phrase = child.find("%sga" % (ns)).text 
+		    	elif (child.find("%shappening" % (ns)) != None):
+		            phrase = child.find("%shappening" % (ns)).text 
+		        sentence.append("(" + phrase + ")")
+		        mor.append("(unk|" + phrase +")")
+		        
 		    #is punctuation
 		    elif (child.tag == (ns + "t")):
 			punctuation = child.get("type")
@@ -191,9 +202,8 @@ def speaker(iter, filename, errorFile, startLine, first):
 		    	if child.get("type") == "comma":
 		            sentence.append(",")
 			    mor.append(",")
-		        
 		check(ID, speaker, sentence, mor, errorFile, filename)
-		elem.clear()
+		elem.clear() 
     return 1
 
 #Takes care of the MOR tier -- returns the proper tag for a word
