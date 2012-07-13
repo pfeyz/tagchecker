@@ -53,9 +53,7 @@ def populate(iter):
 	for elem in iter:
 		#Each sentence has a speaker, a unique ID, and a mor tier
 		ID = int(elem.get("uID")[1:])	#to skip the first "u" for ease of iteration
-		#tiers = Phrase(int(ID))
 		speaker = "*" + elem.get("who") +":"
-		#tiers.clear()
 		mor = []
 		utterance = []
 		#Checks to see if word. If so, print.
@@ -91,7 +89,7 @@ def populate(iter):
 				else:
 					mor.append(process_mor(child.getiterator(ns + "mor"), False))
 				
-					# needs @o, @m, etc at the end
+				# needs @o, @m, etc at the end
 				if child.get("formType") != None:
 					phrase = phrase + d[child.get("formType")]
 				utterance.append(phrase)
@@ -124,9 +122,10 @@ def populate(iter):
 					if child.find("%sw/%sp" % (ns,ns)) != None:
 						phrase = phrase + "h"
 						mor.append("unk|" + phrase)
-					else:
-						mor.append(process_mor(child.getiterator(ns + "mor"), False))
+				else:
+					mor.append(process_mor(child.getiterator(ns + "mor"), False))
 				utterance.append(phrase)
+				
 			
 			#paralinguisitic gesture
 			elif(child.tag == (ns + "e")):
@@ -208,7 +207,6 @@ def combine(category, descript, stem, suffix, c_cat, c_des, c_stem, c_suff, pref
 			else:
 				mor = mor + "&" + c_suff[s].text
 	return mor
-
 
 #Combines various fields to create proper mor tag for one compound
 def combinecmpd(comp_category, category, stem):

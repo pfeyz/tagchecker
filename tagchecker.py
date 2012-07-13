@@ -62,7 +62,7 @@ def parseFile(filename, errors):
 	
 	raw_input("Welcome. Press q to save+quit at any time. Press z to backtrack. Press enter to continue\n--------------------------\n")
 	listofphrases = populate(iter)
-	finished = check(listofphrases, int(startLine), filename, errorFile)
+	finished = check(listofphrases, int(startLine), errorFile, filename)
 
 	#If there are no more lines left to check
 	if finished == 1:
@@ -101,7 +101,6 @@ def check(listofphrases, lineNumber, errorFile, filename):
 	
 def processError(listofphrases, tiers, i, errorFile, filename):
 	length = tiers.getLengthofUtterance()
-	print length
 	#Checking word one by one
 	#if requested index is before first of sentence, bring to previous sentence
 	while i < length:
