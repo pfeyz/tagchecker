@@ -152,20 +152,20 @@ def save(ID, filename):
 #when a file is finished, go to the tracking file and delete all the previous 
 #for that file to prevent the tracking file from cluttering too much
 def clearfinished(filename):
-	r = open(tfile, "rb")
-	trackingfile = csv.reader(r, delimiter=",")
-	toWrite = []
-	for entry in trackingfile:
-		if entry[0] != filename or entry[1] == "finished":
-			toWrite.append([entry[0], entry[1]])
-	r.close()
-	os.remove(tfile)
-	t = open(tfile, "a")
-	newtrackingfile = csv.writer(t, delimiter=",")
-	for item in toWrite:
-		newtrackingfile.writerow(item)
-	t.close()
-	
+    r = open(tfile, "rb")
+    trackingfile = csv.reader(r, delimiter=",")
+    toWrite = []
+    for entry in trackingfile:
+        if entry[0] != filename or entry[1] == "finished":
+            toWrite.append([entry[0], entry[1]])
+    r.close()
+    os.remove(tfile)
+    t = open(tfile, "a")
+    newtrackingfile = csv.writer(t, delimiter=",")
+    for item in toWrite:
+        newtrackingfile.writerow(item)
+    t.close()
+    
 if __name__ == "__main__":
     from sys import argv
     parseFile(argv[1], argv[2])

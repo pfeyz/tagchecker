@@ -51,7 +51,7 @@ def populate(iter):
     isCompound = True
     listofphrases = []
     for elem in iter:
-    	tail_done = False #Keeps track of whether the tail has been taken care of
+        tail_done = False #Keeps track of whether the tail has been taken care of
         #Each sentence has a speaker, a unique ID, and a mor tier
         ID = int(elem.get("uID")[1:])   #to skip the first "u" for ease of iteration
         speaker = "*" + elem.get("who") +":"
