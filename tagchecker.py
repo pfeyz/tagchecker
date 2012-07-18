@@ -36,7 +36,6 @@ def parseFile(filename, errors):
     iter = tree.getiterator(ns + "u")
     efile = open(errors, "a")
     errorFile = csv.writer(efile, delimiter=",")
-
     #if new error file, set up template
     if os.stat(errors)[6]==0:
         errorFile.writerow(["Line", "Speaker", "Utterance", "Tags",
@@ -66,14 +65,13 @@ def parseFile(filename, errors):
 
     #If there are no more lines left to check
     if finished == 1:
-        save("finished", filename)
-        efile.close()
         print "Congratulations: You have finished checking this file. WOOOO"
-        exit()
-        
+        efile.close()
+        clearfinished(filename)
+        save("finished", filename)        
     
 def check(listofphrases, lineNumber, errorFile, filename):
-    while lineNumber <= len(listofphrases):
+    while lineNumber < len(listofphrases):
         current = listofphrases[lineNumber]
         current.printSentence()
         error = raw_input("Error? Type Y or N, followed by Enter\n")
@@ -151,6 +149,23 @@ def save(ID, filename):
     t.close()
     quit()
 
+#when a file is finished, go to the tracking file and delete all the previous 
+#for that file to prevent the tracking file from cluttering too much
+def clearfinished(filename):
+	r = open(tfile, "rb")
+	trackingfile = csv.reader(r, delimiter=",")
+	toWrite = []
+	for entry in trackingfile:
+		if entry[0] != filename or entry[1] == "finished":
+			toWrite.append([entry[0], entry[1]])
+	r.close()
+	os.remove(tfile)
+	t = open(tfile, "a")
+	newtrackingfile = csv.writer(t, delimiter=",")
+	for item in toWrite:
+		newtrackingfile.writerow(item)
+	t.close()
+	
 if __name__ == "__main__":
     from sys import argv
     parseFile(argv[1], argv[2])

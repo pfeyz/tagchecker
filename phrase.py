@@ -34,10 +34,10 @@ class Phrase(object):
         print self.mor[i].center(30," "), self.mor[i+1].center(30," ")
         
     def getLengthofUtterance(self):
-       length = len(self.utterance)
-       if self.utterance[length-1] in d.values():
-           length -=1
-       return length
+        length = len(self.utterance)
+        if self.utterance[length-1] in d.values():
+            length -=1
+        return length
     
     def completeMor(self):
         return ' '.join(self.mor)
@@ -51,6 +51,7 @@ def populate(iter):
     isCompound = True
     listofphrases = []
     for elem in iter:
+    	tail_done = False #Keeps track of whether the tail has been taken care of
         #Each sentence has a speaker, a unique ID, and a mor tier
         ID = int(elem.get("uID")[1:])   #to skip the first "u" for ease of iteration
         speaker = "*" + elem.get("who") +":"
@@ -74,21 +75,20 @@ def populate(iter):
                         phrase = phrase + (child.find("%sshortening" % (ns))).text 
                     if child[0].tail != None:
                         phrase = phrase + child[0].tail
-
+                        tail_done = True
+                          
                 #is replacement
                 if (child.find("%sreplacement" % (ns)) != None):
                     phrase = (child.find("%sreplacement/%sw" % (ns,ns))).text
-                  
                 #is compound
                 if (child.find(".//%smwc/%spos/%sc" % (ns,ns,ns)) != None):
-                    if (child[0].tail != None):
+                    if (child[0].tail != None) and tail_done == False:
                         phrase = phrase + "+" + child[0].tail
                     mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
                 elif (phrase == "xxx" or phrase == "xx") :
                     mor.append("unk|" + phrase)
                 else:
                     mor.append(process_mor(child.getiterator(ns + "mor"), False))
-                
                 # needs @o, @m, etc at the end
                 if child.get("formType") != None:
                     phrase = phrase + d[child.get("formType")]
@@ -121,7 +121,7 @@ def populate(iter):
                 if (process_mor(child.getiterator(ns + "mor"), False) == None):
                     if child.find("%sw/%sp" % (ns,ns)) != None:
                         phrase = phrase + "h"
-                        mor.append("unk|" + phrase)
+                    mor.append("unk|" + phrase)
                 else:
                     mor.append(process_mor(child.getiterator(ns + "mor"), False))
                 utterance.append(phrase)
