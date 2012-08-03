@@ -48,9 +48,9 @@ class Phrase(object):
         
 #populates phrase list
 def populate(iter):
-    isCompound = True
     listofphrases = []
     for elem in iter:
+    	isCompound = False
         tail_done = False #Keeps track of whether the tail has been taken care of
         #Each sentence has a speaker, a unique ID, and a mor tier
         ID = int(elem.get("uID")[1:])   #to skip the first "u" for ease of iteration
@@ -62,6 +62,7 @@ def populate(iter):
             #is directly under <w>
             if (child.tag == (ns + "w")):
                 phrase = child.text 
+                
                 #is fragment
                 if child.get("type") == "fragment":             
                     mor.append("unk|" + phrase)
@@ -76,7 +77,12 @@ def populate(iter):
                     if child[0].tail != None:
                         phrase = phrase + child[0].tail
                         tail_done = True
-                          
+                        
+                #has a drawl        
+                if (child.find("%sp" % (ns)) != None) and child[0].tail != None: 
+                    phrase = phrase + child[0].tail
+                    tail_done = True
+                    
                 #is replacement
                 if (child.find("%sreplacement" % (ns)) != None):
                     phrase = (child.find("%sreplacement/%sw" % (ns,ns))).text
@@ -84,7 +90,7 @@ def populate(iter):
                 if (child.find(".//%smwc/%spos/%sc" % (ns,ns,ns)) != None):
                     if (child[0].tail != None) and tail_done == False:
                         phrase = phrase + "+" + child[0].tail
-                    mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
+                    mor.append(process_mor(child.getiterator(ns + "mor"), True))
                 elif (phrase == "xxx" or phrase == "xx") :
                     mor.append("unk|" + phrase)
                 else:
@@ -97,20 +103,23 @@ def populate(iter):
             #contained under <g>
             elif (child.tag == (ns + "g")):
                 phrase = (child.find("%sw" % (ns))).text
-                #is shortening
+
+				#is shortening
                 if (child.find("%sw/%sshortening" % (ns,ns)) != None):
                     if phrase == None:
                         phrase = (child.find("%sw/%sshortening" % (ns,ns))).text 
                     else:
-                        phrase = phrase + (child.find("%sw/%sshortening" % (ns,ns))).text 
-                    if child[0].tail != None:
-                        phrase = phrase + child[0].tail
+                        phrase = phrase + (child.find("%sw/%sshortening" % (ns,ns))).text
+                    if (child.find("%sw" % (ns))[0].tail != None):
+                        phrase = phrase + (child.find("%sw" % (ns)))[0].tail
                 #is replacement
                 if (child.find("%sw/%sreplacement/%sw" % (ns,ns,ns))) != None:
                     phrase = (child.find("%sw/%sreplacement/%sw" % (ns,ns,ns))).text
                     if (child.find("%sw/%sreplacement/%sw/%swk" % (ns,ns,ns,ns))) != None:
                         phrase = phrase + "+"  + (child.find("%sw/%sreplacement/%sw/%swk" % (ns,ns,ns,ns))).tail
-                    mor.append(process_mor(child.getiterator(ns + "mor"), False))
+                        if (child.find("%sw/%sreplacement/%sw/%swk" % (ns,ns,ns,ns)).get("type") == "cmp"):
+                            isCompound = True
+                    mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
                     utterance.append(phrase)
                     continue
                 
@@ -125,9 +134,8 @@ def populate(iter):
                 else:
                     mor.append(process_mor(child.getiterator(ns + "mor"), False))
                 utterance.append(phrase)
-                
-            
-            #paralinguisitic gesture
+
+			#paralinguisitic gesture
             elif(child.tag == (ns + "e")):
                 if (child.find("%sga" % (ns)) != None):
                     phrase = child.find("%sga" % (ns)).text 
@@ -146,8 +154,8 @@ def populate(iter):
             if (child.tag == (ns + "s")):
                 if child.get("type") == "comma":
                     utterance.append(",")
-                    mor.append(",")
-
+                    mor.append(",")           
+            
         #sets for backtracking purposes
         listofphrases.append(Phrase(ID, speaker, utterance, mor))
         elem.clear()    
@@ -155,6 +163,7 @@ def populate(iter):
 
 #Takes care of the MOR tier -- returns the proper tag for a word
 def process_mor(mor_iter, isCompound):
+    result = "[no tag]"
     for item in mor_iter:
         if (item.get("type") == "mor"):
             if (isCompound == False):
@@ -178,7 +187,7 @@ def process_mor(mor_iter, isCompound):
                 stem = item.findall(".//%smw/%sstem" % (ns,ns))
                 result = combinecmpd(comp_category, category, stem)
         else: pass
-        return result
+    return result
 
 #Combines various fields to create proper mor tag for one word
 def combine(category, descript, stem, suffix, c_cat, c_des, c_stem, c_suff, prefix):

@@ -16,6 +16,16 @@ except ImportError:
 #file keeping track of position
 tfile = "DO_NOT_DELETE.csv"
 
+#Dictionary mapping shortcuts to possible tags
+possibletags = {
+	"cb3":"v:cop|be&3S", "cbp":"v:cop|be&PRES"
+	"n":"n|mommy", "pe":"pro:exist|there", "d":"det|that", "i":"inf|to",
+	"pd":"pro:dem|that", 
+	"pu":"prep|up", "po": "prep|out", "pi":"prep|in", "alo":"adv:loc|out",
+	    "alu":"adv:loc|up",
+	"wa":"adv:wh|where~aux|be&3S"	
+}
+        
 #filename should be an xml file, errors should be a csv file
 def parseFile(filename, errors):
     name, ext = os.path.splitext(filename)
@@ -61,6 +71,7 @@ def parseFile(filename, errors):
     
     raw_input("Welcome. Press q to save+quit at any time. Press z to backtrack. Press enter to continue\n--------------------------\n")
     listofphrases = populate(iter)
+    print "Total lines to check:", len(listofphrases)
     finished = check(listofphrases, int(startLine), errorFile, filename)
 
     #If there are no more lines left to check
@@ -71,6 +82,7 @@ def parseFile(filename, errors):
         save("finished", filename)        
     
 def check(listofphrases, lineNumber, errorFile, filename):
+
     while lineNumber < len(listofphrases):
         current = listofphrases[lineNumber]
         current.printSentence()
@@ -95,7 +107,8 @@ def check(listofphrases, lineNumber, errorFile, filename):
             print "\nCommand not recognized:"
             check(listofphrases, lineNumber, errorFile, filename)
         lineNumber += 1
-    return 1
+    if lineNumber == len(listofphrases):
+        return 1
     
 def processError(listofphrases, tiers, i, errorFile, filename):
     length = tiers.getLengthofUtterance()
@@ -115,11 +128,15 @@ def processError(listofphrases, tiers, i, errorFile, filename):
             tiers.printWord(i)
             error = raw_input("Error in above word? Type Y (Error), C (Error spans two words), or N (No error), followed by Enter\n")
             if error == "y" or error == "Y":
-                correction = raw_input("\nEnter Correct Tag and press enter\n")
-                notes = raw_input("Enter notes. Press Enter to Continue\n")
-                errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i], correction, notes])
-                i+=1
-                print "\nError recorded: Continuing to next word\n -------------\n"
+                correction = inputval()
+                notes = raw_input("Enter notes. Enter z to re-enter correction. Enter n to avoid writing anything to file. Press Enter to Continue\n")
+                if notes == "z":
+                    correction = inputval()
+                    notes = raw_input("Enter notes. Enter n to avoid writing anything to file. Press Enter to Continue\n")
+                if notes != "n":
+                    errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i], correction, notes])
+                    print "\nError recorded: Continuing to next word\n -------------\n"
+                i +=1
             elif error == "n" or error == "N":
                 i +=1
             elif error == "c" or error == "C":
@@ -140,6 +157,13 @@ def processError(listofphrases, tiers, i, errorFile, filename):
                 processError(listofphrases, tiers, i, errorFile, filename)
                 break
         else: i +=1
+
+def inputval():
+    correction = raw_input("\nEnter Correct Tag and press enter.\n")
+    if correction in possibletags:
+        correction = possibletags[correction]
+        print "YOU ENTERED:", correction
+    return correction
         
 def save(ID, filename):
     print "\nLine saved as line %s. Exiting." % (ID)
