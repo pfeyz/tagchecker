@@ -18,14 +18,33 @@ tfile = "DO_NOT_DELETE.csv"
 
 #Dictionary mapping shortcuts to possible tags
 possibletags = {
-	"cb3":"v:cop|be&3S", "cbp":"v:cop|be&PRES"
+	#be (cop)
+	"c3":"v:cop|be&3S", "cp":"v:cop|be&PRES", 
+	"iv1":"pro:sub|I~v:cop|be&1S","yvp":"pro:sub|you~v:cop|be&PRES",
+	"pec3":"pro:exist|there~v:cop|be&3S", "wc":"adv:wh|where~v:cop|be&3S",
+	"whc":"pro:wh|who~v:cop|be&3S", "ic":"pro|it~v:cop|be&3S",
+	"hc":"pro:sub|he~v:cop|be&3S",
+	#be (aux)
+	"wa":"adv:wh|where~aux|be&3S", "a3":"aux|be&3S", "ap":"aux|be&PRES",
+	"wha":"pro:wh|who~aux|be&3S", "ya":"pro|you~aux|be&PRES", "ia":"pro|it~aux|be&3S",
+	"ha":"pro:sub|he~aux|be&3S",
+	#prepositions
+	"pu":"prep|up", "po": "prep|out", "pi":"prep|in", "pov": "prep|over",
+	"pis":"prep|inside", "pl":"prep|like", "pb":"prep|back", "pos":"prep|outside",
+	"pa":"prep|at",
+	#adv:loc
+	"ali":"adv:loc|in", "alo":"adv:loc|out",  "alu":"adv:loc|up",
+	"alov":"adv:loc|over", "alis": "adv:loc|inside", "alos": "adv:loc|outside",
+	"alt":"adv:loc|top",
+	#other common 
 	"n":"n|mommy", "pe":"pro:exist|there", "d":"det|that", "i":"inf|to",
-	"pd":"pro:dem|that", 
-	"pu":"prep|up", "po": "prep|out", "pi":"prep|in", "alo":"adv:loc|out",
-	    "alu":"adv:loc|up",
-	"wa":"adv:wh|where~aux|be&3S"	
+	"pd":"pro:dem|that", "pd2":"pro:dem|this", "a":"adj|right", "l":"v|like",	
+	"ct":"co|there",
+	#compounds
+	"ct":"n|+n|tape+n|recorder", "cp":"n|+n|chicken+n|pox", "cw":"n|+n|water+n|boat",
 }
-        
+   
+
 #filename should be an xml file, errors should be a csv file
 def parseFile(filename, errors):
     name, ext = os.path.splitext(filename)
@@ -75,7 +94,7 @@ def parseFile(filename, errors):
     finished = check(listofphrases, int(startLine), errorFile, filename)
 
     #If there are no more lines left to check
-    if finished == 1:
+    if finished == True:
         print "Congratulations: You have finished checking this file. WOOOO"
         efile.close()
         clearfinished(filename)
@@ -87,17 +106,17 @@ def check(listofphrases, lineNumber, errorFile, filename):
         current = listofphrases[lineNumber]
         current.printSentence()
         error = raw_input("Error? Type Y or N, followed by Enter\n")
-        if error == "y" or error == "Y":
+        if error in "yY":
             print "-------------------------------------------------------------"
             processError(listofphrases, current, 0, errorFile, filename)
             print "-------------------------------------------------------------"
             print "Sentence completed: Continuing to next phrase\n"
-        elif error == "n" or error == "N":
+        elif error in "nN":
             print "No error found: Continuing to next phrase\n"
             check(listofphrases, lineNumber+1, errorFile, filename)
-        elif error == "q" or error == "quit":
+        elif error in "qQ":
             save(current.ID,filename)
-        elif error == "z":
+        elif error in "zZ":
             print "\nReturning to previous line:\n***************************\n"
             if current.ID == 0 :
                 print "\nHEY! You're already at the first line of the file!!\n" 
@@ -107,8 +126,8 @@ def check(listofphrases, lineNumber, errorFile, filename):
             print "\nCommand not recognized:"
             check(listofphrases, lineNumber, errorFile, filename)
         lineNumber += 1
-    if lineNumber == len(listofphrases):
-        return 1
+    if lineNumber >= len(listofphrases):
+        return True
     
 def processError(listofphrases, tiers, i, errorFile, filename):
     length = tiers.getLengthofUtterance()
@@ -127,30 +146,34 @@ def processError(listofphrases, tiers, i, errorFile, filename):
         if tiers.utterance[i] != "," or tiers.mor[i] != ",":
             tiers.printWord(i)
             error = raw_input("Error in above word? Type Y (Error), C (Error spans two words), or N (No error), followed by Enter\n")
-            if error == "y" or error == "Y":
+            if error in "yY":
                 correction = inputval()
                 notes = raw_input("Enter notes. Enter z to re-enter correction. Enter n to avoid writing anything to file. Press Enter to Continue\n")
-                if notes == "z":
+                if notes in "zZ":
                     correction = inputval()
                     notes = raw_input("Enter notes. Enter n to avoid writing anything to file. Press Enter to Continue\n")
-                if notes != "n":
+                if notes not in "nN":
                     errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i], correction, notes])
                     print "\nError recorded: Continuing to next word\n -------------\n"
                 i +=1
-            elif error == "n" or error == "N":
+            elif error in "nN":
                 i +=1
-            elif error == "c" or error == "C":
+            elif error in "cC":
                 tiers.printCompound(i)
-                correction = raw_input("\nEnter Correct Tag and press enter\n")
-                notes = raw_input("Enter notes. Press Enter to Continue\n")
-                errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i]+ " " + tiers.mor[i+1], correction, notes])
-                i = i + 2
-                print "\nCompound error recorded: Continuing to next word\n -------------\n"
-            elif error == "z" or error == "Z":
+                correction = inputval()
+                notes = raw_input("Enter notes. Enter z to re-enter correction. Enter n to avoid writing anything to file.Press Enter to Continue\n")
+                if notes in "zZ":
+                    correction = inputval()
+                    notes = raw_input("Enter notes. Enter n to avoid writing anything to file. Press Enter to Continue\n")
+                if notes != "n":
+                    errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i]+ " " + tiers.mor[i+1], correction, notes])
+                    print "\nCompound error recorded: Continuing to next word\n -------------\n"
+                i=i+2
+            elif error in "zZ":
                 print "\nReturning to previous word\n*************\n" 
                 if tiers.utterance[i-1] == ",": i = i -2
                 else: i = i - 1
-            elif error == "q" or error == "quit":
+            elif error in "qQ":
                 save(tiers.ID,filename)
             else:
                 print "\nCommand not recognized, try again:"
