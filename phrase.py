@@ -47,7 +47,7 @@ class Phrase(object):
         
         
 #populates phrase list
-def populate(iter):
+def populate(iter, speakers=None):
     listofphrases = []
     for elem in iter:
     	isCompound = False
@@ -55,6 +55,8 @@ def populate(iter):
         #Each sentence has a speaker, a unique ID, and a mor tier
         ID = int(elem.get("uID")[1:])   #to skip the first "u" for ease of iteration
         speaker = "*" + elem.get("who") +":"
+        if speakers is not None and elem.get('who') not in speakers:
+            continue
         mor = []
         utterance = []
         #Checks to see if word. If so, print.

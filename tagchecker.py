@@ -46,7 +46,7 @@ possibletags = {
    
 
 #filename should be an xml file, errors should be a csv file
-def parseFile(filename, errors):
+def parseFile(filename, errors, speakers=None):
     name, ext = os.path.splitext(filename)
     name2, ext2 = os.path.splitext(errors)
 
@@ -89,7 +89,7 @@ def parseFile(filename, errors):
     track.close()
     
     raw_input("Welcome. Press q to save+quit at any time. Press z to backtrack. Press enter to continue\n--------------------------\n")
-    listofphrases = populate(iter)
+    listofphrases = populate(iter, speakers)
     print "Total lines to check:", len(listofphrases)
     finished = check(listofphrases, int(startLine), errorFile, filename)
 
@@ -214,5 +214,18 @@ def clearfinished(filename):
     t.close()
     
 if __name__ == "__main__":
-    from sys import argv
-    parseFile(argv[1], argv[2])
+    from argparse import ArgumentParser
+    parser = ArgumentParser(description='Hand-check an XML childes transcript.')
+    parser.add_argument('transcript',
+                        help='An xml file from the CHILDES database to correct.')
+    parser.add_argument('error_log',
+                        help='A csv file to store corrections in.')
+    parser.add_argument('-s', '--speakers',
+                        help=('A comma seperated list of speaker names to '
+                              'limit checking to.'))
+    args = parser.parse_args()
+    if args.speakers:
+        speakers = args.speakers.split(',')
+        parseFile(args.transcript, args.error_log, speakers)
+    else:
+        parseFile(args.transcript, args.error_log)
