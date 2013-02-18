@@ -18,34 +18,34 @@ class Phrase(object):
         self.speaker = speaker
         self.utterance = utterance
         self.mor = mor
-        
+
     def printSentence(self):
         print "Currently checking sentence " + str(self.ID)
         print self.speaker, ' '.join(self.utterance)
         print self.speaker, ' '.join(self.mor) +"\n"
-    
+
     def printWord(self, i):
         print "Phrase: %s %s " % (self.speaker, ' '.join(self.utterance))
         print self.utterance[i].center(60," ")
         print self.mor[i].center(60," ")
-    
+
     def printCompound(self,i):
         print self.utterance[i].center(30," "), self.utterance[i+1].center(30," ")
         print self.mor[i].center(30," "), self.mor[i+1].center(30," ")
-        
+
     def getLengthofUtterance(self):
         length = len(self.utterance)
         if self.utterance[length-1] in d.values():
             length -=1
         return length
-    
+
     def completeMor(self):
         return ' '.join(self.mor)
-        
+
     def completeSentence(self):
         return ' '.join(self.utterance)
-        
-        
+
+
 #populates phrase list
 def populate(iter):
     listofphrases = []
@@ -61,28 +61,28 @@ def populate(iter):
         for child in elem:
             #is directly under <w>
             if (child.tag == (ns + "w")):
-                phrase = child.text 
-                
+                phrase = child.text
+
                 #is fragment
-                if child.get("type") == "fragment":             
+                if child.get("type") == "fragment":
                     mor.append("unk|" + phrase)
                     utterance.append(phrase)
                     continue
                 #is shortening
                 if (child.find("%sshortening" % (ns)) != None):
                     if phrase == None:
-                        phrase = (child.find("%sshortening" % (ns))).text 
+                        phrase = (child.find("%sshortening" % (ns))).text
                     else:
-                        phrase = phrase + (child.find("%sshortening" % (ns))).text 
+                        phrase = phrase + (child.find("%sshortening" % (ns))).text
                     if child[0].tail != None:
                         phrase = phrase + child[0].tail
                         tail_done = True
-                        
-                #has a drawl        
-                if (child.find("%sp" % (ns)) != None) and child[0].tail != None: 
+
+                #has a drawl
+                if (child.find("%sp" % (ns)) != None) and child[0].tail != None:
                     phrase = phrase + child[0].tail
                     tail_done = True
-                    
+
                 #is replacement
                 if (child.find("%sreplacement" % (ns)) != None):
                     phrase = (child.find("%sreplacement/%sw" % (ns,ns))).text
@@ -99,7 +99,7 @@ def populate(iter):
                 if child.get("formType") != None:
                     phrase = phrase + d[child.get("formType")]
                 utterance.append(phrase)
-                
+
             #contained under <g>
             elif (child.tag == (ns + "g")):
                 phrase = (child.find("%sw" % (ns))).text
@@ -107,7 +107,7 @@ def populate(iter):
 				#is shortening
                 if (child.find("%sw/%sshortening" % (ns,ns)) != None):
                     if phrase == None:
-                        phrase = (child.find("%sw/%sshortening" % (ns,ns))).text 
+                        phrase = (child.find("%sw/%sshortening" % (ns,ns))).text
                     else:
                         phrase = phrase + (child.find("%sw/%sshortening" % (ns,ns))).text
                     if (child.find("%sw" % (ns))[0].tail != None):
@@ -122,10 +122,10 @@ def populate(iter):
                     mor.append(process_mor(child.getiterator(ns + "mor"), isCompound))
                     utterance.append(phrase)
                     continue
-                
+
                 # needs @o, @m, etc at the end
                 if child[0].get("formType") != None:
-                    phrase = phrase + d[child[0].get("formType")]   
+                    phrase = phrase + d[child[0].get("formType")]
                 #has no mor tier
                 if (process_mor(child.getiterator(ns + "mor"), False) == None):
                     if child.find("%sw/%sp" % (ns,ns)) != None:
@@ -138,27 +138,27 @@ def populate(iter):
 			#paralinguisitic gesture
             elif(child.tag == (ns + "e")):
                 if (child.find("%sga" % (ns)) != None):
-                    phrase = child.find("%sga" % (ns)).text 
+                    phrase = child.find("%sga" % (ns)).text
                 elif (child.find("%shappening" % (ns)) != None):
-                    phrase = child.find("%shappening" % (ns)).text 
+                    phrase = child.find("%shappening" % (ns)).text
                 utterance.append("(" + phrase + ")")
                 mor.append("(unk|" + phrase +")")
-                
+
             #is punctuation
             elif (child.tag == (ns + "t")):
                 punctuation = child.get("type")
                 utterance.append(d[punctuation])
                 mor.append(d[punctuation])
-            
+
             #is a central comma
             if (child.tag == (ns + "s")):
                 if child.get("type") == "comma":
                     utterance.append(",")
-                    mor.append(",")           
-            
+                    mor.append(",")
+
         #sets for backtracking purposes
         listofphrases.append(Phrase(ID, speaker, utterance, mor))
-        elem.clear()    
+        elem.clear()
     return listofphrases
 
 #Takes care of the MOR tier -- returns the proper tag for a word
@@ -172,7 +172,7 @@ def process_mor(mor_iter, isCompound):
                 stem = item.find("%smw/%sstem" % (ns,ns))
                 suffix = item.findall("%smw/%smk" % (ns,ns))
                 prefix = item.find("%smw/%smpfx" % (ns,ns))
-                
+
                 #possible clitic portion
                 c_cat = item.find("%smor-post/%smw/%spos/%sc" % (ns,ns,ns,ns))
                 c_des = item.findall("%smor-post/%smw/%spos/%ss" % (ns,ns,ns,ns))

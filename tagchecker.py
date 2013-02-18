@@ -19,7 +19,7 @@ tfile = "DO_NOT_DELETE.csv"
 #Dictionary mapping shortcuts to possible tags
 possibletags = {
 	#be (cop)
-	"c3":"v:cop|be&3S", "cp":"v:cop|be&PRES", 
+	"c3":"v:cop|be&3S", "cp":"v:cop|be&PRES",
 	"iv1":"pro:sub|I~v:cop|be&1S","yvp":"pro:sub|you~v:cop|be&PRES",
 	"pec3":"pro:exist|there~v:cop|be&3S", "wc":"adv:wh|where~v:cop|be&3S",
 	"whc":"pro:wh|who~v:cop|be&3S", "ic":"pro|it~v:cop|be&3S",
@@ -36,14 +36,14 @@ possibletags = {
 	"ali":"adv:loc|in", "alo":"adv:loc|out",  "alu":"adv:loc|up",
 	"alov":"adv:loc|over", "alis": "adv:loc|inside", "alos": "adv:loc|outside",
 	"alt":"adv:loc|top",
-	#other common 
+	#other common
 	"n":"n|mommy", "pe":"pro:exist|there", "d":"det|that", "i":"inf|to",
-	"pd":"pro:dem|that", "pd2":"pro:dem|this", "a":"adj|right", "l":"v|like",	
+	"pd":"pro:dem|that", "pd2":"pro:dem|this", "a":"adj|right", "l":"v|like",
 	"ct":"co|there",
 	#compounds
 	"ct":"n|+n|tape+n|recorder", "cp":"n|+n|chicken+n|pox", "cw":"n|+n|water+n|boat",
 }
-   
+
 
 #filename should be an xml file, errors should be a csv file
 def parseFile(filename, errors):
@@ -61,7 +61,7 @@ def parseFile(filename, errors):
     except:
         print "ERROR: File not found. Check and make sure it exists"
         exit()
-        
+
     iter = tree.getiterator(ns + "u")
     efile = open(errors, "a")
     errorFile = csv.writer(efile, delimiter=",")
@@ -87,7 +87,7 @@ def parseFile(filename, errors):
                 print "This file has already been completely checked. "
                 exit()
     track.close()
-    
+
     raw_input("Welcome. Press q to save+quit at any time. Press z to backtrack. Press enter to continue\n--------------------------\n")
     listofphrases = populate(iter)
     print "Total lines to check:", len(listofphrases)
@@ -98,8 +98,8 @@ def parseFile(filename, errors):
         print "Congratulations: You have finished checking this file. WOOOO"
         efile.close()
         clearfinished(filename)
-        save("finished", filename)        
-    
+        save("finished", filename)
+
 def check(listofphrases, lineNumber, errorFile, filename):
     while lineNumber < len(listofphrases):
         current = listofphrases[lineNumber]
@@ -118,7 +118,7 @@ def check(listofphrases, lineNumber, errorFile, filename):
         elif error == "z":
             print "\nReturning to previous line:\n***************************\n"
             if current.ID == 0 :
-                print "\nHEY! You're already at the first line of the file!!\n" 
+                print "\nHEY! You're already at the first line of the file!!\n"
                 check(listofphrases, lineNumber, errorFile, filename)
             else: check(listofphrases, lineNumber-1, errorFile, filename)
         else:
@@ -127,21 +127,21 @@ def check(listofphrases, lineNumber, errorFile, filename):
         lineNumber += 1
         if lineNumber >= len(listofphrases):
             return True
-        
-    
+
+
 def processError(listofphrases, tiers, i, errorFile, filename):
     length = tiers.getLengthofUtterance()
     #Checking word one by one
     #if requested index is before first of sentence, bring to previous sentence
     while i < length:
         if i < 0:
-            print "\nHEY! You're already at the first word in the sentence!!\n" 
+            print "\nHEY! You're already at the first word in the sentence!!\n"
             print "\nReturning to previous line:\n***************************\n"
             if tiers.ID < 1:
-                print "\nHEY! You're already at the first line of the file!!\n" 
+                print "\nHEY! You're already at the first line of the file!!\n"
                 check(listofphrases, tiers.ID, errorFile, filename)
             else: check(listofphrases, tiers.ID-1, errorFile, filename)
-            
+
       #otherwise check word by word
         if tiers.utterance[i] != "," or tiers.mor[i] != ",":
             tiers.printWord(i)
@@ -170,7 +170,7 @@ def processError(listofphrases, tiers, i, errorFile, filename):
                     print "\nCompound error recorded: Continuing to next word\n -------------\n"
                 i=i+2
             elif error == "z":
-                print "\nReturning to previous word\n*************\n" 
+                print "\nReturning to previous word\n*************\n"
                 if tiers.utterance[i-1] == ",": i = i -2
                 else: i = i - 1
             elif error == "q":
@@ -187,16 +187,17 @@ def inputval():
         correction = possibletags[correction]
         print "YOU ENTERED:", correction
     return correction
-        
-def save(ID, filename):
+
+def save(ID, filename, quit_after=True):
     print "\nLine saved as line %s. Exiting." % (ID)
     t = open(tfile, "a")
     trackingfile = csv.writer(t, delimiter=",")
     trackingfile.writerow([filename, ID])
     t.close()
-    quit()
+    if quit_after:
+        quit()
 
-#when a file is finished, go to the tracking file and delete all the previous 
+#when a file is finished, go to the tracking file and delete all the previous
 #for that file to prevent the tracking file from cluttering too much
 def clearfinished(filename):
     r = open(tfile, "rb")
@@ -212,7 +213,7 @@ def clearfinished(filename):
     for item in toWrite:
         newtrackingfile.writerow(item)
     t.close()
-    
+
 if __name__ == "__main__":
     from sys import argv
     parseFile(argv[1], argv[2])
