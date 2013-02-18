@@ -46,7 +46,7 @@ possibletags = {
    
 
 #filename should be an xml file, errors should be a csv file
-def parseFile(filename, errors, speakers=None):
+def parseFile(filename, errors):
     name, ext = os.path.splitext(filename)
     name2, ext2 = os.path.splitext(errors)
 
@@ -89,7 +89,7 @@ def parseFile(filename, errors, speakers=None):
     track.close()
     
     raw_input("Welcome. Press q to save+quit at any time. Press z to backtrack. Press enter to continue\n--------------------------\n")
-    listofphrases = populate(iter, speakers)
+    listofphrases = populate(iter)
     print "Total lines to check:", len(listofphrases)
     finished = check(listofphrases, int(startLine), errorFile, filename)
 
@@ -101,22 +101,21 @@ def parseFile(filename, errors, speakers=None):
         save("finished", filename)        
     
 def check(listofphrases, lineNumber, errorFile, filename):
-
     while lineNumber < len(listofphrases):
         current = listofphrases[lineNumber]
         current.printSentence()
         error = raw_input("Error? Type Y or N, followed by Enter\n")
-        if error in "yY":
+        if error == "y":
             print "-------------------------------------------------------------"
             processError(listofphrases, current, 0, errorFile, filename)
             print "-------------------------------------------------------------"
             print "Sentence completed: Continuing to next phrase\n"
-        elif error in "nN":
+        elif error == "n":
             print "No error found: Continuing to next phrase\n"
             check(listofphrases, lineNumber+1, errorFile, filename)
-        elif error in "qQ":
+        elif error == "q":
             save(current.ID,filename)
-        elif error in "zZ":
+        elif error == "z":
             print "\nReturning to previous line:\n***************************\n"
             if current.ID == 0 :
                 print "\nHEY! You're already at the first line of the file!!\n" 
@@ -126,8 +125,9 @@ def check(listofphrases, lineNumber, errorFile, filename):
             print "\nCommand not recognized:"
             check(listofphrases, lineNumber, errorFile, filename)
         lineNumber += 1
-    if lineNumber >= len(listofphrases):
-        return True
+        if lineNumber >= len(listofphrases):
+            return True
+        
     
 def processError(listofphrases, tiers, i, errorFile, filename):
     length = tiers.getLengthofUtterance()
@@ -146,34 +146,34 @@ def processError(listofphrases, tiers, i, errorFile, filename):
         if tiers.utterance[i] != "," or tiers.mor[i] != ",":
             tiers.printWord(i)
             error = raw_input("Error in above word? Type Y (Error), C (Error spans two words), or N (No error), followed by Enter\n")
-            if error in "yY":
+            if error == "y":
                 correction = inputval()
                 notes = raw_input("Enter notes. Enter z to re-enter correction. Enter n to avoid writing anything to file. Press Enter to Continue\n")
-                if notes in "zZ":
+                if notes == "z":
                     correction = inputval()
                     notes = raw_input("Enter notes. Enter n to avoid writing anything to file. Press Enter to Continue\n")
-                if notes not in "nN":
+                if notes != "n":
                     errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i], correction, notes])
                     print "\nError recorded: Continuing to next word\n -------------\n"
                 i +=1
-            elif error in "nN":
+            elif error == "n":
                 i +=1
-            elif error in "cC":
+            elif error == "c":
                 tiers.printCompound(i)
                 correction = inputval()
                 notes = raw_input("Enter notes. Enter z to re-enter correction. Enter n to avoid writing anything to file.Press Enter to Continue\n")
-                if notes in "zZ":
+                if notes == "z":
                     correction = inputval()
                     notes = raw_input("Enter notes. Enter n to avoid writing anything to file. Press Enter to Continue\n")
                 if notes != "n":
                     errorFile.writerow([tiers.ID, tiers.speaker, tiers.completeSentence(), tiers.completeMor(), tiers.mor[i]+ " " + tiers.mor[i+1], correction, notes])
                     print "\nCompound error recorded: Continuing to next word\n -------------\n"
                 i=i+2
-            elif error in "zZ":
+            elif error == "z":
                 print "\nReturning to previous word\n*************\n" 
                 if tiers.utterance[i-1] == ",": i = i -2
                 else: i = i - 1
-            elif error in "qQ":
+            elif error == "q":
                 save(tiers.ID,filename)
             else:
                 print "\nCommand not recognized, try again:"
@@ -214,18 +214,5 @@ def clearfinished(filename):
     t.close()
     
 if __name__ == "__main__":
-    from argparse import ArgumentParser
-    parser = ArgumentParser(description='Hand-check an XML childes transcript.')
-    parser.add_argument('transcript',
-                        help='An xml file from the CHILDES database to correct.')
-    parser.add_argument('error_log',
-                        help='A csv file to store corrections in.')
-    parser.add_argument('-s', '--speakers',
-                        help=('A comma seperated list of speaker names to '
-                              'limit checking to.'))
-    args = parser.parse_args()
-    if args.speakers:
-        speakers = args.speakers.split(',')
-        parseFile(args.transcript, args.error_log, speakers)
-    else:
-        parseFile(args.transcript, args.error_log)
+    from sys import argv
+    parseFile(argv[1], argv[2])
