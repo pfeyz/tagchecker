@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import csv
 import os
+import logging
 from phrase import *
+
+logging.basicConfig(filename='log.txt',level=logging.DEBUG)
 
 try:
     from lxml import etree
@@ -103,6 +106,11 @@ def parseFile(filename, errors):
 def check(listofphrases, lineNumber, errorFile, filename):
     while lineNumber < len(listofphrases):
         current = listofphrases[lineNumber]
+        if current is SkippedUtterance:
+            logging.warning('skipping utterance {0}:{1}'.format(
+                    filename, lineNumber))
+            lineNumber += 1
+            continue
         current.printSentence()
         error = raw_input("Error? Type Y or N, followed by Enter\n")
         if error == "y":
