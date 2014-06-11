@@ -7,12 +7,11 @@ ls --> list whatever is in folder
 
 Once you're in the tagchecker folder, you can run the program with the following command:
 
-python tagchecker.py "Valian/01b.xml" "errors/Valian_01b_errors.csv" -s MOT,CHI
+python tagchecker-new.py "Valian/01b.xml" "errors/Valian_01b_errors.csv"
 
-where the final three arguments are the file you want to check, the file you
-want to save to, and (optionaly) a comma seperated list of speakers you want to
-limit corrections to. If the last file already exists, the program will append
-the errors to the end of it. If it doesn't exist, it will create the file.
+where the final two arguments are the file you want to check and the file you want to save to, respectively. If 
+the last file already exists, the program will append the errors to the end of it. If it doesn't exist, it will 
+create the file.
 
 --------
 
